@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - MD TV</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0b0f;
+            color: #ffffff;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0b0f; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f46; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #52525b; 
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Glowing effects */
+        .glow-magenta {
+            box-shadow: 0 4px 20px rgba(219, 39, 119, 0.4);
+        }
+        .glow-border {
+            border: 1px solid rgba(219, 39, 119, 0.3);
+        }
+        /* Animation transitions */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .sidebar-link.active {
+            background: linear-gradient(to right, rgba(219, 39, 119, 0.2), transparent);
+            border-left: 3px solid #db2777;
+            color: white;
+        }
+        .sidebar-link.active i {
+            color: #ec4899;
+        }
+        
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden bg-black text-zinc-300">
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-zinc-900/95 border border-pink-500/30 text-white px-4 py-2.5 rounded-full text-xs font-semibold shadow-lg z-50 flex items-center gap-2 transition-all duration-300 transform scale-0 opacity-0 hidden">
+        <span id="toast-icon"></span>
+        <span id="toast-text">Notifikasi</span>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-300 relative z-20 hidden md:flex">
+        <!-- Logo -->
+        <div class="h-16 flex items-center px-6 border-b border-zinc-800">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-pink-600 to-fuchsia-600 flex items-center justify-center glow-magenta">
+                    <i data-lucide="play" class="w-4 h-4 text-white fill-white ml-0.5"></i>
+                </div>
+                <span class="text-xl font-black tracking-wide bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">MD TV Admin</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+            <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-link active flex items-center gap-3 px-6 py-3 text-sm font-medium hover:text-white transition-colors text-zinc-400">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                Dashboard Analitik
+            </a>
+            <div class="px-6 py-2 mt-4">
+                <p class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Manajemen Konten</p>
+            </div>
+            <a href="#" onclick="switchTab('drama')" id="nav-drama" class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm font-medium hover:text-white transition-colors text-zinc-400">
+                <i data-lucide="film" class="w-5 h-5"></i>
+                Drama & Episode
+            </a>
+            <a href="#" onclick="switchTab('ads')" id="nav-ads" class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm font-medium hover:text-white transition-colors text-zinc-400">
+                <i data-lucide="monitor-play" class="w-5 h-5"></i>
+                Manajemen Iklan
+            </a>
+            <div class="px-6 py-2 mt-4">
+                <p class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Bisnis & Pengguna</p>
+            </div>
+            <a href="#" onclick="switchTab('vip')" id="nav-vip" class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm font-medium hover:text-white transition-colors text-zinc-400">
+                <i data-lucide="crown" class="w-5 h-5"></i>
+                Paket VIP
+            </a>
+            <a href="#" onclick="switchTab('finance')" id="nav-finance" class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm font-medium hover:text-white transition-colors text-zinc-400">
+                <i data-lucide="wallet" class="w-5 h-5"></i>
+                Keuangan & Transaksi
+            </a>
+            <a href="#" onclick="switchTab('users')" id="nav-users" class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm font-medium hover:text-white transition-colors text-zinc-400">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                Manajemen Pengguna
+            </a>
+        </nav>
+
+        <!-- User Profile (Bottom) -->
+        <div class="p-4 border-t border-zinc-800">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
+                    <i data-lucide="user" class="w-5 h-5 text-zinc-400"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-white">Admin System</p>
+                    <p class="text-[10px] text-pink-500 font-semibold tracking-wider">SUPER ADMIN</p>
+                </div>
+                <button class="ml-auto text-zinc-500 hover:text-white" onclick="showToast('Logged out', 'success')">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MOBILE OVERLAY & MENU TOGGLE -->
+    <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/80 z-10 hidden md:hidden" onclick="toggleMobileMenu()"></div>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <!-- Top Header -->
+        <header class="h-16 flex items-center justify-between px-6 bg-zinc-950/50 backdrop-blur-md border-b border-zinc-800/50 sticky top-0 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleMobileMenu()" class="md:hidden text-zinc-400 hover:text-white">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <h1 id="page-title" class="text-lg font-bold text-white hidden sm:block">Dashboard Analitik</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <i data-lucide="bell" class="w-5 h-5 text-zinc-400 hover:text-white cursor-pointer" onclick="showToast('Tidak ada notifikasi baru')"></i>
+                    <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-pink-500 rounded-full border-2 border-black"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" id="main-content">
+            
+            <!-- VIEW: DASHBOARD (7.13.7) -->
+            <div id="view-dashboard" class="fade-in space-y-6">
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-pink-500/30 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="text-xs font-semibold text-zinc-400">Total Pengguna Aktif (MAU)</p>
+                                <h3 class="text-2xl font-black text-white mt-1">124,500</h3>
+                            </div>
+                            <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                                <i data-lucide="users" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-emerald-400 font-medium flex items-center gap-1 mt-4">
+                            <i data-lucide="trending-up" class="w-3 h-3"></i> +12.5% bulan ini
+                        </p>
+                    </div>
+                    
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-pink-500/30 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="text-xs font-semibold text-zinc-400">Pelanggan VIP Aktif</p>
+                                <h3 class="text-2xl font-black text-white mt-1">8,240</h3>
+                            </div>
+                            <div class="p-2 bg-yellow-500/10 rounded-lg text-yellow-400">
+                                <i data-lucide="crown" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-emerald-400 font-medium flex items-center gap-1 mt-4">
+                            <i data-lucide="trending-up" class="w-3 h-3"></i> +5.2% bulan ini (Conv. 6.6%)
+                        </p>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-pink-500/30 transition-colors relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-20 h-20 bg-pink-600/10 rounded-full blur-xl"></div>
+                        <div class="flex justify-between items-start mb-2 relative z-10">
+                            <div>
+                                <p class="text-xs font-semibold text-zinc-400">Pendapatan (Bulan Ini)</p>
+                                <h3 class="text-2xl font-black text-white mt-1">Rp 215.4M</h3>
+                            </div>
+                            <div class="p-2 bg-pink-500/10 rounded-lg text-pink-500">
+                                <i data-lucide="credit-card" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-emerald-400 font-medium flex items-center gap-1 mt-4 relative z-10">
+                            <i data-lucide="trending-up" class="w-3 h-3"></i> +18% vs bulan lalu
+                        </p>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-pink-500/30 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="text-xs font-semibold text-zinc-400">Views Iklan (Rewarded)</p>
+                                <h3 class="text-2xl font-black text-white mt-1">1.2M</h3>
+                            </div>
+                            <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+                                <i data-lucide="monitor-play" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-emerald-400 font-medium flex items-center gap-1 mt-4">
+                            <i data-lucide="trending-up" class="w-3 h-3"></i> Fill rate 94%
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <!-- Top Dramas -->
+                    <div class="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                        <h3 class="text-sm font-bold text-white mb-4">Top Drama (Views Tertinggi)</h3>
+                        <div class="space-y-4">
+                            <!-- Item 1 -->
+                            <div class="flex items-center justify-between p-3 bg-zinc-950 rounded-lg border border-zinc-800/50">
+                                <div class="flex items-center gap-4">
+                                    <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=150" class="w-12 h-16 object-cover rounded-md" alt="Cover">
+                                    <div>
+                                        <p class="text-sm font-bold text-white">Pembalasan Sang Miliarder</p>
+                                        <p class="text-xs text-zinc-500">Miliarder • 85 Episode</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-pink-500">450k Views</p>
+                                    <p class="text-[10px] text-zinc-500">Completion: 78%</p>
+                                </div>
+                            </div>
+                            <!-- Item 2 -->
+                            <div class="flex items-center justify-between p-3 bg-zinc-950 rounded-lg border border-zinc-800/50">
+                                <div class="flex items-center gap-4">
+                                    <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=150" class="w-12 h-16 object-cover rounded-md" alt="Cover">
+                                    <div>
+                                        <p class="text-sm font-bold text-white">Cinta Bersemi di Kantor</p>
+                                        <p class="text-xs text-zinc-500">Romantis • 60 Episode</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-pink-500">320k Views</p>
+                                    <p class="text-[10px] text-zinc-500">Completion: 65%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conversion Funnel Placeholder -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                        <h3 class="text-sm font-bold text-white mb-4">Funnel Konversi VIP</h3>
+                        <div class="space-y-4">
+                            <div class="relative pt-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-xs font-semibold text-zinc-400">Lihat Paywall</span>
+                                    <span class="text-xs font-bold text-white">100% (45k)</span>
+                                </div>
+                                <div class="overflow-hidden h-2 text-xs flex rounded-full bg-zinc-800">
+                                    <div style="width: 100%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-zinc-600"></div>
+                                </div>
+                            </div>
+                            <div class="relative pt-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-xs font-semibold text-zinc-400">Mulai Checkout</span>
+                                    <span class="text-xs font-bold text-white">25% (11k)</span>
+                                </div>
+                                <div class="overflow-hidden h-2 text-xs flex rounded-full bg-zinc-800">
+                                    <div style="width: 25%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-600"></div>
+                                </div>
+                            </div>
+                            <div class="relative pt-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-xs font-semibold text-zinc-400">Pembayaran Sukses</span>
+                                    <span class="text-xs font-bold text-white">8% (3.6k)</span>
+                                </div>
+                                <div class="overflow-hidden h-2 text-xs flex rounded-full bg-zinc-800">
+                                    <div style="width: 8%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500 glow-magenta"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: DRAMA & EPISODE (7.13.1 & 7.13.2) -->
+            <div id="view-drama" class="hidden fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="relative w-full sm:w-64">
+                        <input type="text" placeholder="Cari drama..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all">
+                        <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5"></i>
+                    </div>
+                    <button onclick="openDramaModal()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-fuchsia-600 text-sm font-bold flex items-center gap-2 glow-magenta hover:opacity-90 w-full sm:w-auto justify-center">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Tambah Drama
+                    </button>
+                </div>
+
+                <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left text-sm text-zinc-400">
+                        <thead class="bg-zinc-950/50 text-xs uppercase text-zinc-500 border-b border-zinc-800">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 font-medium">Judul Drama</th>
+                                <th scope="col" class="px-6 py-4 font-medium">Genre</th>
+                                <th scope="col" class="px-6 py-4 font-medium">Total Eps</th>
+                                <th scope="col" class="px-6 py-4 font-medium">Status</th>
+                                <th scope="col" class="px-6 py-4 font-medium text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drama-tbody" class="divide-y divide-zinc-800">
+                            <!-- Rendered by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: ADS MANAGEMENT (7.13.3) -->
+            <div id="view-ads" class="hidden fade-in space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Global Settings -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                        <h3 class="text-base font-bold text-white mb-4">Pengaturan Global Iklan & Paywall</h3>
+                        
+                        <div class="space-y-5" id="ads-form">
+                            <div class="flex items-center justify-between p-4 bg-zinc-950 rounded-lg border border-zinc-800/50">
+                                <div>
+                                    <p class="text-sm font-bold text-white">Status Iklan (Rewarded Ads)</p>
+                                    <p class="text-xs text-zinc-500">Aktifkan untuk mengizinkan pengguna membuka episode dengan iklan</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="ads-enabled" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                                </label>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-sm font-semibold text-zinc-300">Default Episode Gratis Awal</label>
+                                <input type="number" id="ads-free-eps" value="2" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all">
+                                <p class="text-[10px] text-zinc-500">Jumlah episode per drama yang bisa ditonton sebelum paywall muncul.</p>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-sm font-semibold text-zinc-300">Rasio Buka (Iklan : Episode)</label>
+                                <select id="ads-ratio" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all">
+                                    <option value="1">1 Iklan = 1 Episode</option>
+                                    <option value="2" selected>1 Iklan = 2 Episode</option>
+                                    <option value="3">1 Iklan = 3 Episode</option>
+                                </select>
+                            </div>
+
+                            <button onclick="saveAdsSettings()" class="w-full px-4 py-2.5 rounded-lg bg-pink-600 hover:bg-pink-500 text-sm font-bold transition-colors mt-4">Simpan Pengaturan</button>
+                        </div>
+                    </div>
+
+                    <!-- SDK Settings -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                        <h3 class="text-base font-bold text-white mb-4">Integrasi Ad Network</h3>
+                        <div class="space-y-4">
+                            <div class="space-y-1">
+                                <label class="text-sm font-semibold text-zinc-300">Penyedia SDK</label>
+                                <select class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all">
+                                    <option value="admob">Google AdMob</option>
+                                    <option value="applovin">AppLovin MAX</option>
+                                    <option value="unity">Unity Ads</option>
+                                </select>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <label class="text-sm font-semibold text-zinc-300">Android Ad Unit ID</label>
+                                <input type="text" value="ca-app-pub-xxxxxxxx/xxxxxx" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white font-mono">
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-sm font-semibold text-zinc-300">iOS Ad Unit ID</label>
+                                <input type="text" value="ca-app-pub-yyyyyyyy/yyyyyy" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white font-mono">
+                            </div>
+
+                             <button onclick="showToast('Kredensial Ad Network berhasil diperbarui', 'success')" class="w-full px-4 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-sm font-bold transition-colors mt-4 text-white">Update Kredensial</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: VIP PACKAGES (7.13.4) -->
+            <div id="view-vip" class="hidden fade-in space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Daftar Paket VIP</h2>
+                    <button onclick="openVIPModal()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-fuchsia-600 text-sm font-bold flex items-center gap-2 glow-magenta hover:opacity-90">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Buat Paket
+                    </button>
+                </div>
+
+                <div id="vip-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- VIEW: FINANCE & TRANSACTIONS (7.13.5) -->
+            <div id="view-finance" class="hidden fade-in space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left Col: Rekening Manual -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-white">Rekening Transfer Manual</h3>
+                                <button onclick="openAccountModal()" class="text-pink-500 hover:text-pink-400 text-xs font-bold flex items-center gap-1">
+                                    <i data-lucide="plus" class="w-3 h-3"></i> Tambah
+                                </button>
+                            </div>
+                            
+                            <div id="account-list" class="space-y-3">
+                                <!-- Rendered by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Col: Queue Verifikasi -->
+                    <div class="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col">
+                        <h3 class="text-sm font-bold text-white mb-4">Antrean Verifikasi Manual</h3>
+                        
+                        <div class="flex-1 overflow-x-auto">
+                            <table class="w-full text-left text-sm text-zinc-400">
+                                <thead class="text-xs uppercase text-zinc-500 border-b border-zinc-800">
+                                    <tr>
+                                        <th class="pb-3 font-medium">Pengguna</th>
+                                        <th class="pb-3 font-medium">Paket & Nominal</th>
+                                        <th class="pb-3 font-medium">Bukti Bayar</th>
+                                        <th class="pb-3 font-medium text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-800">
+                                    <tr>
+                                        <td class="py-4">
+                                            <p class="font-bold text-white">Budi Santoso</p>
+                                            <p class="text-[10px] text-zinc-500">ID: usr_8912...</p>
+                                        </td>
+                                        <td class="py-4">
+                                            <p class="text-pink-400 font-bold">VIP Bulanan</p>
+                                            <p class="font-mono text-xs">Rp 45.027 <span class="text-zinc-500">(BCA)</span></p>
+                                        </td>
+                                        <td class="py-4">
+                                            <button class="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                                                <i data-lucide="image" class="w-4 h-4"></i> Lihat Bukti
+                                            </button>
+                                        </td>
+                                        <td class="py-4 text-right">
+                                            <div class="flex justify-end gap-2">
+                                                <button onclick="showToast('Transaksi ditolak', 'error')" class="px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded text-xs font-bold transition-colors">Tolak</button>
+                                                <button onclick="this.closest('tr').remove(); showToast('VIP berhasil diaktifkan untuk Budi Santoso', 'success')" class="px-3 py-1.5 bg-emerald-500 text-white hover:bg-emerald-600 rounded text-xs font-bold transition-colors glow-magenta">Verifikasi VIP</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: USER MANAGEMENT (7.13.6) -->
+            <div id="view-users" class="hidden fade-in space-y-6">
+                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="relative w-full sm:w-80">
+                        <input type="text" placeholder="Cari ID, Email, atau Nomor HP..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all">
+                        <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5"></i>
+                    </div>
+                </div>
+
+                <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left text-sm text-zinc-400">
+                        <thead class="bg-zinc-950/50 text-xs uppercase text-zinc-500 border-b border-zinc-800">
+                            <tr>
+                                <th class="px-6 py-4 font-medium">ID Pengguna / Email</th>
+                                <th class="px-6 py-4 font-medium">Metode Login</th>
+                                <th class="px-6 py-4 font-medium">Status VIP</th>
+                                <th class="px-6 py-4 font-medium text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-800">
+                            <tr class="hover:bg-zinc-800/30 transition-colors">
+                                <td class="px-6 py-4">
+                                    <p class="font-bold text-white">rani.putri@gmail.com</p>
+                                    <p class="text-[10px] text-zinc-500">ID: usr_abc123</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="flex items-center gap-1.5 text-xs"><i data-lucide="mail" class="w-3.5 h-3.5"></i> Google</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2.5 py-1 rounded text-[10px] font-bold bg-pink-500/10 text-pink-400 border border-pink-500/20">VIP AKTIF</span>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-xs text-blue-400 hover:text-white transition-colors">Detail</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODALS SECTION -->
+    
+    <!-- 1. Drama Modal -->
+    <div id="modal-drama" class="fixed inset-0 modal-backdrop z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-full">
+            <div class="flex justify-between items-center p-5 border-b border-zinc-800">
+                <h3 class="text-lg font-bold text-white" id="modal-drama-title">Tambah Drama Baru</h3>
+                <button onclick="closeModal('drama')" class="text-zinc-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4">
+                <input type="hidden" id="drama-id">
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Judul Drama</label>
+                    <input type="text" id="drama-title" placeholder="Masukkan judul..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Genre</label>
+                    <input type="text" id="drama-genre" placeholder="Miliarder, Romantis..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Sinopsis</label>
+                    <textarea id="drama-synopsis" rows="3" placeholder="Deskripsi cerita..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-pink-500 focus:outline-none"></textarea>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Status</label>
+                    <select id="drama-status" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-pink-500 focus:outline-none">
+                        <option value="DRAFT">Draft (Sembunyikan)</option>
+                        <option value="PUBLISHED">Published (Tampilkan)</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Thumbnail/Cover URL (Mock)</label>
+                    <input type="text" id="drama-cover" placeholder="https://..." value="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=150" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+            </div>
+            <div class="p-5 border-t border-zinc-800 bg-zinc-950 flex justify-end gap-3">
+                <button onclick="closeModal('drama')" class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-sm font-bold text-white transition-colors">Batal</button>
+                <button onclick="saveDrama()" class="px-4 py-2 rounded-lg bg-pink-600 hover:bg-pink-500 text-sm font-bold text-white transition-colors glow-magenta">Simpan Drama</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Episode Management Modal -->
+    <div id="modal-episode" class="fixed inset-0 modal-backdrop z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-4xl h-[80vh] overflow-hidden shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center p-5 border-b border-zinc-800">
+                <h3 class="text-lg font-bold text-white">Kelola Episode: <span id="ep-drama-title" class="text-pink-500">Drama Title</span></h3>
+                <button onclick="closeModal('episode')" class="text-zinc-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+                <!-- Left: Upload Form -->
+                <div class="w-full md:w-1/3 border-r border-zinc-800 p-5 bg-zinc-950 overflow-y-auto">
+                    <h4 class="font-bold text-white mb-4">Upload Video Episode</h4>
+                    <input type="hidden" id="ep-drama-id">
+                    <div class="space-y-4">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-zinc-400">Judul Episode</label>
+                            <input type="text" id="ep-title" placeholder="Mis. Episode 1" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-zinc-400">Tipe Akses</label>
+                            <select id="ep-type" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                                <option value="free">Gratis Default</option>
+                                <option value="locked">Terkunci (Iklan/VIP)</option>
+                            </select>
+                        </div>
+                        <div class="border-2 border-dashed border-zinc-700 rounded-lg p-4 text-center hover:border-pink-500 transition-colors cursor-pointer" onclick="document.getElementById('video-upload').click()">
+                            <input type="file" id="video-upload" class="hidden" accept="video/mp4" onchange="simulateUpload()">
+                            <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto text-zinc-500 mb-2"></i>
+                            <p class="text-xs font-semibold text-zinc-300">Klik untuk memilih video (Mock)</p>
+                            <p class="text-[10px] text-zinc-500">Upload to Bunny.net Stream</p>
+                        </div>
+                        
+                        <!-- Progress Bar (Hidden default) -->
+                        <div id="upload-progress-container" class="hidden space-y-1">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-pink-400" id="upload-status">Mengunggah...</span>
+                                <span class="text-zinc-400" id="upload-percent">0%</span>
+                            </div>
+                            <div class="w-full bg-zinc-800 rounded-full h-1.5">
+                                <div id="upload-bar" class="bg-pink-600 h-1.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <button id="btn-save-ep" onclick="saveEpisode()" class="w-full px-4 py-2 rounded-lg bg-pink-600 text-sm font-bold text-white transition-colors opacity-50 cursor-not-allowed" disabled>Simpan Episode</button>
+                    </div>
+                </div>
+                
+                <!-- Right: Episode List -->
+                <div class="flex-1 p-5 overflow-y-auto">
+                    <h4 class="font-bold text-white mb-4">Daftar Episode</h4>
+                    <div id="episode-list" class="space-y-2">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. VIP Modal -->
+    <div id="modal-vip" class="fixed inset-0 modal-backdrop z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center p-5 border-b border-zinc-800">
+                <h3 class="text-lg font-bold text-white" id="modal-vip-title">Tambah Paket VIP</h3>
+                <button onclick="closeModal('vip')" class="text-zinc-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <input type="hidden" id="vip-id">
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Nama Paket</label>
+                    <input type="text" id="vip-name" placeholder="Mis. VIP Tahunan" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Harga (Rp)</label>
+                    <input type="number" id="vip-price" placeholder="45000" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Deskripsi Durasi</label>
+                    <input type="text" id="vip-duration" placeholder="Akses penuh 365 hari" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="vip-promo" class="w-4 h-4 accent-pink-600 rounded bg-zinc-900 border-zinc-800">
+                    <label class="text-sm text-zinc-300 font-semibold">Tandai sebagai Promo</label>
+                </div>
+                <div class="space-y-1" id="promo-text-container" style="display: none;">
+                    <label class="text-sm font-semibold text-zinc-300">Label Promo</label>
+                    <input type="text" id="vip-promoText" placeholder="HEMAT 50%" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+            </div>
+            <div class="p-5 border-t border-zinc-800 bg-zinc-950">
+                <button onclick="saveVIP()" class="w-full px-4 py-2 rounded-lg bg-pink-600 hover:bg-pink-500 text-sm font-bold text-white transition-colors glow-magenta">Simpan Paket</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Account Modal -->
+    <div id="modal-account" class="fixed inset-0 modal-backdrop z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center p-5 border-b border-zinc-800">
+                <h3 class="text-lg font-bold text-white" id="modal-account-title">Tambah Rekening</h3>
+                <button onclick="closeModal('account')" class="text-zinc-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <input type="hidden" id="acc-id">
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Bank / E-Wallet</label>
+                    <input type="text" id="acc-bank" placeholder="BCA / Mandiri / GoPay" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Nomor Rekening</label>
+                    <input type="text" id="acc-number" placeholder="000 000 000" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-zinc-300">Atas Nama</label>
+                    <input type="text" id="acc-name" placeholder="Nama Pemilik" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-pink-500 focus:outline-none">
+                </div>
+            </div>
+            <div class="p-5 border-t border-zinc-800 bg-zinc-950">
+                <button onclick="saveAccount()" class="w-full px-4 py-2 rounded-lg bg-pink-600 hover:bg-pink-500 text-sm font-bold text-white transition-colors glow-magenta">Simpan Rekening</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for Logic & Navigation -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // ---- STATE MANAGEMENT (MOCK DATA) ----
+        let state = {
+            dramas: [
+                { id: 1, title: 'Pembalasan Sang Miliarder', genre: 'Miliarder, Balas Dendam', eps: 85, status: 'PUBLISHED', cover: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=150' },
+                { id: 2, title: 'Rahasia Si Anak Magang', genre: 'Romantis', eps: 24, status: 'DRAFT', cover: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=150' }
+            ],
+            vips: [
+                { id: 1, name: 'VIP Mingguan', duration: 'Akses penuh 7 hari', price: 15000, active: true, promo: false },
+                { id: 2, name: 'VIP Bulanan', duration: 'Akses penuh 30 hari (Auto-renewal)', price: 45000, active: true, promo: true, promoText: 'HEMAT 30%' }
+            ],
+            accounts: [
+                { id: 1, bank: 'BCA', number: '8732 1199 00', name: 'PT MicroDrama Media', active: true },
+                { id: 2, bank: 'DANA', number: '0812 3456 7890', name: 'MicroDrama', active: false }
+            ],
+            episodes: {
+                1: [
+                    { id: 101, title: 'Episode 1', type: 'free', status: 'ready', videoId: 'bunny_abc123' },
+                    { id: 102, title: 'Episode 2', type: 'free', status: 'ready', videoId: 'bunny_xyz890' }
+                ]
+            }
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDramas();
+            renderVIPs();
+            renderAccounts();
+            
+            // Toggle promo text input based on checkbox
+            document.getElementById('vip-promo').addEventListener('change', function() {
+                document.getElementById('promo-text-container').style.display = this.checked ? 'block' : 'none';
+            });
+        });
+
+        // ---- UI HELPERS ----
+        function switchTab(tabId) {
+            const views = ['dashboard', 'drama', 'ads', 'vip', 'finance', 'users'];
+            views.forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                document.getElementById(`nav-${v}`).classList.remove('active');
+            });
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+
+            const titles = {
+                'dashboard': 'Dashboard Analitik',
+                'drama': 'Manajemen Drama & Episode',
+                'ads': 'Pengaturan Iklan (Monetisasi)',
+                'vip': 'Manajemen Paket VIP',
+                'finance': 'Keuangan & Verifikasi',
+                'users': 'Manajemen Pengguna'
+            };
+            document.getElementById('page-title').innerText = titles[tabId];
+            if(window.innerWidth < 768) toggleMobileMenu(true);
+        }
+
+        function toggleMobileMenu(forceClose = false) {
+            const sidebar = document.querySelector('aside');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            if (sidebar.classList.contains('hidden') && !forceClose) {
+                sidebar.classList.remove('hidden');
+                sidebar.classList.add('absolute', 'h-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('hidden');
+                sidebar.classList.remove('absolute', 'h-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        let toastTimeout;
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = msg;
+            
+            let iconHtml = type === 'error' ? '<i data-lucide="alert-circle" class="w-4 h-4 text-red-500"></i>' : '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>';
+            document.getElementById('toast-icon').innerHTML = iconHtml;
+            lucide.createIcons();
+
+            toast.classList.remove('hidden', 'scale-0', 'opacity-0');
+            toast.classList.add('scale-100', 'opacity-100');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('scale-100', 'opacity-100');
+                toast.classList.add('scale-0', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        function openModal(id) {
+            document.getElementById(`modal-${id}`).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(`modal-${id}`).classList.add('hidden');
+        }
+
+        function generateId() {
+            return Math.floor(Math.random() * 1000000);
+        }
+
+        // ---- DRAMA LOGIC ----
+        function renderDramas() {
+            const tbody = document.getElementById('drama-tbody');
+            tbody.innerHTML = '';
+            state.dramas.forEach(drama => {
+                const statusBadge = drama.status === 'PUBLISHED' 
+                    ? `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">PUBLISHED</span>`
+                    : `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">DRAFT</span>`;
+                
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-zinc-800/30 transition-colors';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 flex items-center gap-3">
+                        <img src="${drama.cover}" class="w-8 h-8 rounded object-cover">
+                        <span class="font-bold text-white">${drama.title}</span>
+                    </td>
+                    <td class="px-6 py-4">${drama.genre}</td>
+                    <td class="px-6 py-4">${drama.eps}</td>
+                    <td class="px-6 py-4">${statusBadge}</td>
+                    <td class="px-6 py-4 text-right flex justify-end gap-2">
+                        <button onclick="openEpisodeModal(${drama.id})" class="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors" title="Kelola Episode">
+                            <i data-lucide="list-video" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="editDrama(${drama.id})" class="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors" title="Edit Metadata">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function openDramaModal() {
+            document.getElementById('modal-drama-title').innerText = 'Tambah Drama Baru';
+            document.getElementById('drama-id').value = '';
+            document.getElementById('drama-title').value = '';
+            document.getElementById('drama-genre').value = '';
+            document.getElementById('drama-synopsis').value = '';
+            document.getElementById('drama-status').value = 'DRAFT';
+            openModal('drama');
+        }
+
+        function editDrama(id) {
+            const drama = state.dramas.find(d => d.id === id);
+            if(!drama) return;
+            document.getElementById('modal-drama-title').innerText = 'Edit Drama';
+            document.getElementById('drama-id').value = drama.id;
+            document.getElementById('drama-title').value = drama.title;
+            document.getElementById('drama-genre').value = drama.genre;
+            document.getElementById('drama-synopsis').value = drama.synopsis || '';
+            document.getElementById('drama-cover').value = drama.cover;
+            document.getElementById('drama-status').value = drama.status;
+            openModal('drama');
+        }
+
+        function saveDrama() {
+            const id = document.getElementById('drama-id').value;
+            const newDrama = {
+                title: document.getElementById('drama-title').value,
+                genre: document.getElementById('drama-genre').value,
+                synopsis: document.getElementById('drama-synopsis').value,
+                cover: document.getElementById('drama-cover').value,
+                status: document.getElementById('drama-status').value,
+            };
+            
+            if(!newDrama.title) return showToast('Judul drama wajib diisi', 'error');
+
+            if (id) {
+                const index = state.dramas.findIndex(d => d.id == id);
+                state.dramas[index] = { ...state.dramas[index], ...newDrama };
+                showToast('Drama berhasil diperbarui');
+            } else {
+                newDrama.id = generateId();
+                newDrama.eps = 0;
+                state.dramas.push(newDrama);
+                state.episodes[newDrama.id] = [];
+                showToast('Drama baru berhasil ditambahkan');
+            }
+            
+            renderDramas();
+            closeModal('drama');
+        }
+
+        // ---- EPISODE LOGIC ----
+        function openEpisodeModal(dramaId) {
+            const drama = state.dramas.find(d => d.id === dramaId);
+            document.getElementById('ep-drama-title').innerText = drama.title;
+            document.getElementById('ep-drama-id').value = drama.id;
+            
+            // reset form
+            document.getElementById('ep-title').value = '';
+            document.getElementById('video-upload').value = '';
+            document.getElementById('upload-progress-container').classList.add('hidden');
+            document.getElementById('btn-save-ep').disabled = true;
+            document.getElementById('btn-save-ep').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('btn-save-ep').classList.remove('glow-magenta');
+            
+            renderEpisodes(dramaId);
+            openModal('episode');
+        }
+
+        function renderEpisodes(dramaId) {
+            const list = document.getElementById('episode-list');
+            list.innerHTML = '';
+            const eps = state.episodes[dramaId] || [];
+            
+            if(eps.length === 0) {
+                list.innerHTML = '<p class="text-xs text-zinc-500 italic">Belum ada episode untuk drama ini.</p>';
+                return;
+            }
+
+            eps.forEach((ep, index) => {
+                const badge = ep.type === 'free' 
+                    ? `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[9px] font-bold">GRATIS</span>`
+                    : `<span class="bg-pink-500/10 text-pink-400 border border-pink-500/20 px-2 py-0.5 rounded text-[9px] font-bold">TERKUNCI</span>`;
+                    
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 bg-zinc-950 rounded-lg border border-zinc-800/50';
+                item.innerHTML = `
+                    <div>
+                        <p class="text-sm font-bold text-white flex items-center gap-2">
+                            ${index+1}. ${ep.title} ${badge}
+                        </p>
+                        <p class="text-[10px] text-zinc-500 font-mono mt-1">ID: ${ep.videoId} • Status: <span class="text-emerald-400">Siap Tayang</span></p>
+                    </div>
+                    <button onclick="deleteEpisode(${dramaId}, ${ep.id})" class="text-red-500 hover:bg-red-500/10 p-1.5 rounded transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                `;
+                list.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        function simulateUpload() {
+            const fileInput = document.getElementById('video-upload');
+            if(!fileInput.files.length) return;
+            
+            const pContainer = document.getElementById('upload-progress-container');
+            const pBar = document.getElementById('upload-bar');
+            const pText = document.getElementById('upload-percent');
+            const pStatus = document.getElementById('upload-status');
+            const btn = document.getElementById('btn-save-ep');
+            
+            pContainer.classList.remove('hidden');
+            btn.disabled = true;
+            pStatus.innerText = 'Mengunggah ke Bunny.net...';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if(progress > 100) progress = 100;
+                
+                pBar.style.width = progress + '%';
+                pText.innerText = Math.floor(progress) + '%';
+                
+                if(progress === 100) {
+                    clearInterval(interval);
+                    pStatus.innerText = 'Video siap!';
+                    pStatus.classList.replace('text-pink-400', 'text-emerald-400');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.classList.add('glow-magenta');
+                }
+            }, 300);
+        }
+
+        function saveEpisode() {
+            const dramaId = parseInt(document.getElementById('ep-drama-id').value);
+            const title = document.getElementById('ep-title').value || `Episode ${(state.episodes[dramaId]?.length || 0) + 1}`;
+            const type = document.getElementById('ep-type').value;
+            
+            if(!state.episodes[dramaId]) state.episodes[dramaId] = [];
+            
+            state.episodes[dramaId].push({
+                id: generateId(),
+                title: title,
+                type: type,
+                status: 'ready',
+                videoId: 'bunny_mock_' + generateId()
+            });
+            
+            // update drama eps count
+            const drama = state.dramas.find(d => d.id === dramaId);
+            if(drama) drama.eps = state.episodes[dramaId].length;
+            
+            showToast('Episode berhasil diunggah');
+            renderEpisodes(dramaId);
+            renderDramas();
+            
+            // reset form partly
+            document.getElementById('ep-title').value = '';
+            document.getElementById('video-upload').value = '';
+            document.getElementById('upload-progress-container').classList.add('hidden');
+            document.getElementById('btn-save-ep').disabled = true;
+            document.getElementById('btn-save-ep').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('upload-status').classList.replace('text-emerald-400', 'text-pink-400');
+            document.getElementById('upload-bar').style.width = '0%';
+        }
+        
+        function deleteEpisode(dramaId, epId) {
+            state.episodes[dramaId] = state.episodes[dramaId].filter(e => e.id !== epId);
+            const drama = state.dramas.find(d => d.id === dramaId);
+            if(drama) drama.eps = state.episodes[dramaId].length;
+            renderEpisodes(dramaId);
+            renderDramas();
+            showToast('Episode dihapus');
+        }
+
+        // ---- ADS LOGIC ----
+        function saveAdsSettings() {
+            // just mock saving
+            showToast('Pengaturan monetisasi berhasil disimpan', 'success');
+        }
+
+        // ---- VIP LOGIC ----
+        function renderVIPs() {
+            const grid = document.getElementById('vip-grid');
+            grid.innerHTML = '';
+            state.vips.forEach(vip => {
+                let badgeHTML = '';
+                if(vip.promo) {
+                    badgeHTML = `
+                        <div class="absolute top-0 right-4 transform -translate-y-1/2">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-pink-600 to-fuchsia-600 text-white shadow-lg">${vip.promoText}</span>
+                        </div>
+                    `;
+                } else if(vip.active) {
+                    badgeHTML = `
+                        <div class="absolute top-4 right-4">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">AKTIF</span>
+                        </div>
+                    `;
+                }
+
+                let classes = "bg-zinc-900 border border-zinc-800 rounded-xl p-5 relative";
+                if(vip.promo) classes = "bg-zinc-900 border border-pink-600/50 rounded-xl p-5 relative shadow-[0_0_15px_rgba(219,39,119,0.15)]";
+
+                const formattedPrice = vip.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+                const card = document.createElement('div');
+                card.className = classes;
+                card.innerHTML = `
+                    ${badgeHTML}
+                    <h3 class="text-xl font-black text-white mt-2">${vip.name}</h3>
+                    <p class="text-xs text-zinc-500 mb-4">${vip.duration}</p>
+                    
+                    <div class="text-3xl font-extrabold text-pink-500 mb-4 flex items-baseline gap-1">
+                        <span class="text-lg">Rp</span> ${formattedPrice}
+                    </div>
+
+                    <div class="space-y-2 mb-6">
+                        <div class="flex items-center gap-2 text-sm text-zinc-300">
+                            <i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Bebas Iklan
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-zinc-300">
+                            <i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Buka Semua Episode
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="editVIP(${vip.id})" class="flex-1 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-sm font-bold transition-colors">Edit</button>
+                        <button onclick="deleteVIP(${vip.id})" class="py-2 px-3 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors" title="Nonaktifkan">
+                            <i data-lucide="power" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function openVIPModal() {
+            document.getElementById('modal-vip-title').innerText = 'Tambah Paket VIP';
+            document.getElementById('vip-id').value = '';
+            document.getElementById('vip-name').value = '';
+            document.getElementById('vip-price').value = '';
+            document.getElementById('vip-duration').value = '';
+            document.getElementById('vip-promo').checked = false;
+            document.getElementById('vip-promoText').value = '';
+            document.getElementById('promo-text-container').style.display = 'none';
+            openModal('vip');
+        }
+
+        function editVIP(id) {
+            const vip = state.vips.find(v => v.id === id);
+            if(!vip) return;
+            document.getElementById('modal-vip-title').innerText = 'Edit Paket VIP';
+            document.getElementById('vip-id').value = vip.id;
+            document.getElementById('vip-name').value = vip.name;
+            document.getElementById('vip-price').value = vip.price;
+            document.getElementById('vip-duration').value = vip.duration;
+            document.getElementById('vip-promo').checked = vip.promo;
+            document.getElementById('vip-promoText').value = vip.promoText || '';
+            document.getElementById('promo-text-container').style.display = vip.promo ? 'block' : 'none';
+            openModal('vip');
+        }
+
+        function saveVIP() {
+            const id = document.getElementById('vip-id').value;
+            const newVIP = {
+                name: document.getElementById('vip-name').value,
+                price: parseInt(document.getElementById('vip-price').value),
+                duration: document.getElementById('vip-duration').value,
+                promo: document.getElementById('vip-promo').checked,
+                promoText: document.getElementById('vip-promoText').value,
+                active: true
+            };
+            
+            if(!newVIP.name || !newVIP.price) return showToast('Nama dan Harga wajib diisi', 'error');
+
+            if (id) {
+                const index = state.vips.findIndex(v => v.id == id);
+                state.vips[index] = { ...state.vips[index], ...newVIP };
+                showToast('Paket berhasil diperbarui');
+            } else {
+                newVIP.id = generateId();
+                state.vips.push(newVIP);
+                showToast('Paket baru berhasil ditambahkan');
+            }
+            
+            renderVIPs();
+            closeModal('vip');
+        }
+        
+        function deleteVIP(id) {
+            state.vips = state.vips.filter(v => v.id !== id);
+            renderVIPs();
+            showToast('Paket dinonaktifkan', 'error');
+        }
+
+        // ---- ACCOUNTS LOGIC ----
+        function renderAccounts() {
+            const list = document.getElementById('account-list');
+            list.innerHTML = '';
+            state.accounts.forEach(acc => {
+                const activeBadge = acc.active 
+                    ? `<div class="absolute top-2 right-2 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="text-[9px] text-emerald-500 font-bold uppercase">Aktif Ditampilkan</span>
+                       </div>`
+                    : '';
+                    
+                const classes = acc.active 
+                    ? 'p-3 bg-zinc-950 rounded-lg border border-pink-500/30 relative' 
+                    : 'p-3 bg-zinc-950 rounded-lg border border-zinc-800 relative opacity-70';
+
+                const btnHtml = acc.active
+                    ? `<button onclick="toggleAccount(${acc.id})" class="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-300">Nonaktifkan</button>`
+                    : `<button onclick="toggleAccount(${acc.id})" class="text-[10px] bg-emerald-500/20 px-2 py-1 rounded text-emerald-400 font-bold">Aktifkan</button>`;
+
+                const item = document.createElement('div');
+                item.className = classes;
+                item.innerHTML = `
+                    ${activeBadge}
+                    <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">${acc.bank}</p>
+                    <p class="text-lg font-mono text-white font-semibold tracking-widest">${acc.number}</p>
+                    <p class="text-xs text-zinc-500 mt-1">A.n ${acc.name}</p>
+                    <div class="mt-3 flex gap-2">
+                        <button onclick="editAccount(${acc.id})" class="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-300">Edit</button>
+                        ${btnHtml}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function openAccountModal() {
+            document.getElementById('modal-account-title').innerText = 'Tambah Rekening';
+            document.getElementById('acc-id').value = '';
+            document.getElementById('acc-bank').value = '';
+            document.getElementById('acc-number').value = '';
+            document.getElementById('acc-name').value = '';
+            openModal('account');
+        }
+
+        function editAccount(id) {
+            const acc = state.accounts.find(a => a.id === id);
+            if(!acc) return;
+            document.getElementById('modal-account-title').innerText = 'Edit Rekening';
+            document.getElementById('acc-id').value = acc.id;
+            document.getElementById('acc-bank').value = acc.bank;
+            document.getElementById('acc-number').value = acc.number;
+            document.getElementById('acc-name').value = acc.name;
+            openModal('account');
+        }
+
+        function saveAccount() {
+            const id = document.getElementById('acc-id').value;
+            const newAcc = {
+                bank: document.getElementById('acc-bank').value,
+                number: document.getElementById('acc-number').value,
+                name: document.getElementById('acc-name').value,
+                active: true
+            };
+            
+            if(!newAcc.bank || !newAcc.number) return showToast('Bank dan Nomor wajib diisi', 'error');
+
+            if (id) {
+                const index = state.accounts.findIndex(a => a.id == id);
+                state.accounts[index] = { ...state.accounts[index], ...newAcc };
+                showToast('Rekening berhasil diperbarui');
+            } else {
+                newAcc.id = generateId();
+                state.accounts.push(newAcc);
+                showToast('Rekening baru ditambahkan');
+            }
+            
+            renderAccounts();
+            closeModal('account');
+        }
+        
+        function toggleAccount(id) {
+            const acc = state.accounts.find(a => a.id === id);
+            acc.active = !acc.active;
+            renderAccounts();
+            showToast(acc.active ? 'Rekening diaktifkan' : 'Rekening dinonaktifkan');
+        }
+    </script>
+</body>
+</html>
