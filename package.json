@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start"
   },
@@ -21,8 +21,13 @@
   },
   "homepage": "https://github.com/feuadextreme/projek-fuad#readme",
   "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
+    "moov-faststart": "^1.0.4",
     "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

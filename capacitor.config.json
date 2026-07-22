@@ -1,0 +1,16 @@
+{
+  "appId": "com.microdrama.app",
+  "appName": "MicroDrama TV",
+  "webDir": "public",
+  "server": {
+    "url": "http://10.0.2.2:3000",
+    "cleartext": true
+  },
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "536680955856-hds921fi50cv9do9ur2cs803mjtvo9np.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
+}

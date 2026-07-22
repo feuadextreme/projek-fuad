@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -466,7 +466,7 @@
                                         <td class="py-4 text-right">
                                             <div class="flex justify-end gap-2">
                                                 <button onclick="showToast('Transaksi ditolak', 'error')" class="px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded text-xs font-bold transition-colors">Tolak</button>
-                                                <button onclick="this.closest('tr').remove(); showToast('VIP berhasil diaktifkan untuk Budi Santoso', 'success')" class="px-3 py-1.5 bg-emerald-500 text-white hover:bg-emerald-600 rounded text-xs font-bold transition-colors glow-magenta">Verifikasi VIP</button>
+                                                <button onclick="const btn = this; btn.innerText='Terverifikasi'; btn.disabled=true; btn.classList.add('opacity-50', 'cursor-not-allowed'); showToast('VIP berhasil diaktifkan untuk pengguna', 'success'); setTimeout(() => btn.closest('tr').remove(), 2000);" class="px-3 py-1.5 bg-emerald-500 text-white hover:bg-emerald-600 rounded text-xs font-bold transition-colors glow-magenta">Verifikasi VIP</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -869,7 +869,7 @@
             openModal('drama');
         }
 
-        function saveDrama() {
+        async function saveDrama() {
             const id = document.getElementById('drama-id').value;
             const newDrama = {
                 title: document.getElementById('drama-title').value,
@@ -881,20 +881,46 @@
             
             if(!newDrama.title) return showToast('Judul drama wajib diisi', 'error');
 
-            if (id) {
-                const index = state.dramas.findIndex(d => d.id == id);
-                state.dramas[index] = { ...state.dramas[index], ...newDrama };
-                showToast('Drama berhasil diperbarui');
-            } else {
-                newDrama.id = generateId();
-                newDrama.eps = 0;
-                state.dramas.push(newDrama);
-                state.episodes[newDrama.id] = [];
-                showToast('Drama baru berhasil ditambahkan');
+            try {
+                let res;
+                if (id) {
+                    res = await fetch('/api/admin/dramas/' + id, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newDrama)
+                    });
+                } else {
+                    res = await fetch('/api/admin/dramas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newDrama)
+                    });
+                }
+
+                if (res.ok) {
+                    const json = await res.json();
+                    const savedDrama = json.data;
+                    
+                    if (id) {
+                        const index = state.dramas.findIndex(d => d.id == id);
+                        if(index !== -1) state.dramas[index] = { ...state.dramas[index], ...savedDrama };
+                        showToast('Drama berhasil diperbarui');
+                    } else {
+                        savedDrama.eps = 0;
+                        state.dramas.unshift(savedDrama);
+                        state.episodes[savedDrama.id] = [];
+                        showToast('Drama baru berhasil ditambahkan');
+                    }
+                    
+                    renderDramas();
+                    closeModal('drama');
+                } else {
+                    showToast('Gagal menyimpan drama ke database', 'error');
+                }
+            } catch(e) {
+                console.error(e);
+                showToast('Terjadi kesalahan jaringan', 'error');
             }
-            
-            renderDramas();
-            closeModal('drama');
         }
 
         async function deleteDrama(id) {
@@ -914,10 +940,27 @@
         }
 
         // ---- EPISODE LOGIC ----
-        function openEpisodeModal(dramaId) {
+        async function openEpisodeModal(dramaId) {
             const drama = state.dramas.find(d => d.id === dramaId);
+            if (!drama) return;
             document.getElementById('ep-drama-title').innerText = drama.title;
             document.getElementById('ep-drama-id').value = drama.id;
+            
+            try {
+                const res = await fetch('/api/admin/dramas/' + dramaId + '/episodes');
+                if (res.ok) {
+                    const json = await res.json();
+                    state.episodes[dramaId] = json.data.map(ep => ({
+                        id: ep.id,
+                        title: ep.title,
+                        isFreeDefault: ep.isFreeDefault,
+                        status: ep.processingStatus || 'ready',
+                        videoId: ep.playbackUrl || '-'
+                    }));
+                }
+            } catch (e) {
+                console.error("Failed to load episodes", e);
+            }
             
             // reset form
             document.getElementById('ep-title').value = '';
@@ -955,16 +998,23 @@
                         </p>
                         <p class="text-[10px] text-zinc-500 font-mono mt-1">ID: ${ep.videoId} ΓÇó Status: <span class="text-emerald-400">Siap Tayang</span></p>
                     </div>
-                    <button onclick="deleteEpisode(${dramaId}, ${ep.id})" class="text-red-500 hover:bg-red-500/10 p-1.5 rounded transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <button onclick="deleteEpisode('${dramaId}', '${ep.id}')" class="text-red-500 hover:bg-red-500/10 p-1.5 rounded transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 `;
                 list.appendChild(item);
             });
             lucide.createIcons();
         }
 
+        let uploadedVideoCdnUrl = null;
         function simulateUpload() {
             const fileInput = document.getElementById('video-upload');
             if(!fileInput.files.length) return;
+            
+            const file = fileInput.files[0];
+            if(!file.name.toLowerCase().endsWith('.mp4') && file.type !== 'video/mp4') {
+                showToast('Hanya file MP4 yang diperbolehkan!', 'error');
+                return;
+            }
             
             const pContainer = document.getElementById('upload-progress-container');
             const pBar = document.getElementById('upload-bar');
@@ -976,65 +1026,134 @@
             btn.disabled = true;
             pStatus.innerText = 'Mengunggah ke Bunny.net...';
             
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 25;
-                if(progress > 100) progress = 100;
-                
-                pBar.style.width = progress + '%';
-                pText.innerText = Math.floor(progress) + '%';
-                
-                if(progress === 100) {
-                    clearInterval(interval);
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/admin/upload', true);
+            
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    pBar.style.width = percentComplete + '%';
+                    pText.innerText = percentComplete + '%';
+                }
+            };
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    uploadedVideoCdnUrl = response.url;
+                    
                     pStatus.innerText = 'Video siap!';
                     pStatus.classList.replace('text-pink-400', 'text-emerald-400');
                     btn.disabled = false;
                     btn.classList.remove('opacity-50', 'cursor-not-allowed');
                     btn.classList.add('glow-magenta');
+                } else {
+                    let err = 'Gagal mengunggah!';
+                    try { err = JSON.parse(xhr.responseText).error || err; } catch(e) {}
+                    pStatus.innerText = err;
+                    showToast(err, 'error');
+                    // Enable button anyway to allow retry or mock save
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
-            }, 300);
+            };
+            
+            xhr.onerror = function() {
+                pStatus.innerText = 'Gagal mengunggah!';
+                showToast('Terjadi kesalahan jaringan', 'error');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            };
+            
+            xhr.send(formData);
         }
 
-        function saveEpisode() {
-            const dramaId = parseInt(document.getElementById('ep-drama-id').value);
-            const title = document.getElementById('ep-title').value || `Episode ${(state.episodes[dramaId]?.length || 0) + 1}`;
+        async function saveEpisode() {
+            const dramaId = document.getElementById('ep-drama-id').value;
+            const parsedDramaId = isNaN(parseInt(dramaId)) ? dramaId : parseInt(dramaId);
+            const title = document.getElementById('ep-title').value || `Episode ${(state.episodes[parsedDramaId]?.length || 0) + 1}`;
             const type = document.getElementById('ep-type').value;
             
-            if(!state.episodes[dramaId]) state.episodes[dramaId] = [];
-            
-            state.episodes[dramaId].push({
-                id: generateId(),
+            const payload = {
                 title: title,
-                type: type,
-                status: 'ready',
-                videoId: 'bunny_mock_' + generateId()
-            });
+                epNumber: (state.episodes[parsedDramaId]?.length || 0) + 1,
+                isFreeDefault: type === 'free',
+                playbackUrl: uploadedVideoCdnUrl
+            };
             
-            // update drama eps count
-            const drama = state.dramas.find(d => d.id === dramaId);
-            if(drama) drama.eps = state.episodes[dramaId].length;
-            
-            showToast('Episode berhasil diunggah');
-            renderEpisodes(dramaId);
-            renderDramas();
-            
-            // reset form partly
-            document.getElementById('ep-title').value = '';
-            document.getElementById('video-upload').value = '';
-            document.getElementById('upload-progress-container').classList.add('hidden');
-            document.getElementById('btn-save-ep').disabled = true;
-            document.getElementById('btn-save-ep').classList.add('opacity-50', 'cursor-not-allowed');
-            document.getElementById('upload-status').classList.replace('text-emerald-400', 'text-pink-400');
-            document.getElementById('upload-bar').style.width = '0%';
+            try {
+                const res = await fetch('/api/admin/dramas/' + parsedDramaId + '/episodes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if(res.ok) {
+                    if(!state.episodes[parsedDramaId]) state.episodes[parsedDramaId] = [];
+                    
+                    state.episodes[parsedDramaId].push({
+                        id: generateId(),
+                        title: title,
+                        type: type,
+                        status: 'ready',
+                        videoId: uploadedVideoCdnUrl || 'bunny_mock_' + generateId()
+                    });
+                    
+                    // update drama eps count
+                    const drama = state.dramas.find(d => d.id == parsedDramaId);
+                    if(drama) drama.eps = state.episodes[parsedDramaId].length;
+                    
+                    showToast('Episode berhasil diunggah');
+                    renderEpisodes(parsedDramaId);
+                    renderDramas();
+                    
+                    // reset form partly
+                    document.getElementById('ep-title').value = '';
+                    document.getElementById('video-upload').value = '';
+                    document.getElementById('upload-progress-container').classList.add('hidden');
+                    document.getElementById('btn-save-ep').disabled = true;
+                    document.getElementById('btn-save-ep').classList.add('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('upload-status').classList.replace('text-emerald-400', 'text-pink-400');
+                    document.getElementById('upload-bar').style.width = '0%';
+                    uploadedVideoCdnUrl = null;
+                } else {
+                    showToast('Gagal menyimpan episode ke database', 'error');
+                }
+            } catch(e) {
+                console.error(e);
+                showToast('Terjadi kesalahan jaringan', 'error');
+            }
         }
         
-        function deleteEpisode(dramaId, epId) {
-            state.episodes[dramaId] = state.episodes[dramaId].filter(e => e.id !== epId);
-            const drama = state.dramas.find(d => d.id === dramaId);
-            if(drama) drama.eps = state.episodes[dramaId].length;
-            renderEpisodes(dramaId);
-            renderDramas();
-            showToast('Episode dihapus');
+        async function deleteEpisode(dramaId, epId) {
+            if (!confirm('Yakin ingin menghapus episode ini? Video yang bersangkutan juga akan dihapus dari server Bunny.net secara permanen.')) return;
+            
+            try {
+                // If it's a mock episode that hasn't been saved properly to DB (e.g. without ep_), just filter frontend
+                if (epId.toString().startsWith('bunny_mock_') || epId === undefined) {
+                     state.episodes[dramaId] = state.episodes[dramaId].filter(e => e.id !== epId);
+                     renderEpisodes(dramaId);
+                     return;
+                }
+
+                const res = await fetch('/api/admin/dramas/' + dramaId + '/episodes/' + epId, { method: 'DELETE' });
+                if (res.ok) {
+                    state.episodes[dramaId] = state.episodes[dramaId].filter(e => e.id !== epId);
+                    const drama = state.dramas.find(d => d.id == dramaId);
+                    if(drama) drama.eps = state.episodes[dramaId].length;
+                    renderEpisodes(dramaId);
+                    renderDramas();
+                    showToast('Episode dan video berhasil dihapus');
+                } else {
+                    showToast('Gagal menghapus episode dari server', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Terjadi kesalahan jaringan', 'error');
+            }
         }
 
         // ---- ADS LOGIC ----
@@ -1176,8 +1295,8 @@
                     : 'p-3 bg-zinc-950 rounded-lg border border-zinc-800 relative opacity-70';
 
                 const btnHtml = acc.active
-                    ? `<button onclick="toggleAccount(${acc.id})" class="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-300">Nonaktifkan</button>`
-                    : `<button onclick="toggleAccount(${acc.id})" class="text-[10px] bg-emerald-500/20 px-2 py-1 rounded text-emerald-400 font-bold">Aktifkan</button>`;
+                    ? `<button onclick="toggleAccount('${acc.id}')" class="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-300">Nonaktifkan</button>`
+                    : `<button onclick="toggleAccount('${acc.id}')" class="text-[10px] bg-emerald-500/20 px-2 py-1 rounded text-emerald-400 font-bold">Aktifkan</button>`;
 
                 const item = document.createElement('div');
                 item.className = classes;
@@ -1187,7 +1306,7 @@
                     <p class="text-lg font-mono text-white font-semibold tracking-widest">${acc.number}</p>
                     <p class="text-xs text-zinc-500 mt-1">A.n ${acc.name}</p>
                     <div class="mt-3 flex gap-2">
-                        <button onclick="editAccount(${acc.id})" class="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-300">Edit</button>
+                        <button onclick="editAccount('${acc.id}')" class="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-300">Edit</button>
                         ${btnHtml}
                     </div>
                 `;
@@ -1244,7 +1363,7 @@
         }
 
         function editAccount(id) {
-            const acc = state.accounts.find(a => a.id === id);
+            const acc = state.accounts.find(a => a.id == id);
             if(!acc) return;
             document.getElementById('modal-account-title').innerText = 'Edit Rekening';
             document.getElementById('acc-id').value = acc.id;
@@ -1254,36 +1373,75 @@
             openModal('account');
         }
 
-        function saveAccount() {
+        async function saveAccount() {
             const id = document.getElementById('acc-id').value;
             const newAcc = {
-                bank: document.getElementById('acc-bank').value,
-                number: document.getElementById('acc-number').value,
-                name: document.getElementById('acc-name').value,
-                active: true
+                bankOrProviderName: document.getElementById('acc-bank').value,
+                accountNumber: document.getElementById('acc-number').value,
+                accountHolderName: document.getElementById('acc-name').value,
+                isActive: true,
+                channelType: 'bank'
             };
             
-            if(!newAcc.bank || !newAcc.number) return showToast('Bank dan Nomor wajib diisi', 'error');
+            if(!newAcc.bankOrProviderName || !newAcc.accountNumber) return showToast('Bank dan Nomor wajib diisi', 'error');
 
-            if (id) {
-                const index = state.accounts.findIndex(a => a.id == id);
-                state.accounts[index] = { ...state.accounts[index], ...newAcc };
-                showToast('Rekening berhasil diperbarui');
-            } else {
-                newAcc.id = generateId();
-                state.accounts.push(newAcc);
-                showToast('Rekening baru ditambahkan');
+            try {
+                if (id) {
+                    const res = await fetch(`/api/admin/finance/accounts/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newAcc)
+                    });
+                    if (res.ok) {
+                        showToast('Rekening berhasil diperbarui');
+                    } else {
+                        throw new Error();
+                    }
+                } else {
+                    const res = await fetch('/api/admin/finance/accounts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newAcc)
+                    });
+                    if (res.ok) {
+                        showToast('Rekening baru ditambahkan');
+                    } else {
+                        throw new Error();
+                    }
+                }
+                closeModal('account');
+                loadData();
+            } catch (err) {
+                showToast('Terjadi kesalahan saat menyimpan rekening', 'error');
             }
-            
-            renderAccounts();
-            closeModal('account');
         }
         
-        function toggleAccount(id) {
-            const acc = state.accounts.find(a => a.id === id);
-            acc.active = !acc.active;
-            renderAccounts();
-            showToast(acc.active ? 'Rekening diaktifkan' : 'Rekening dinonaktifkan');
+        async function toggleAccount(id) {
+            const acc = state.accounts.find(a => a.id == id);
+            if (!acc) return;
+            const newStatus = !acc.active;
+            try {
+                const res = await fetch(`/api/admin/finance/accounts/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bankOrProviderName: acc.bank,
+                        accountNumber: acc.number,
+                        accountHolderName: acc.name,
+                        isActive: newStatus,
+                        channelType: acc.type
+                    })
+                });
+                if (res.ok) {
+                    acc.active = newStatus;
+                    renderAccounts();
+                    showToast(newStatus ? 'Rekening diaktifkan' : 'Rekening dinonaktifkan');
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                showToast('Gagal merubah status rekening', 'error');
+            }
         }
     </script>
 </body>

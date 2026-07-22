@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MicroDrama TV</string>
+    <string name="title_activity_main">MicroDrama TV</string>
+    <string name="package_name">com.microdrama.app</string>
+    <string name="custom_url_scheme">com.microdrama.app</string>
+    <string name="server_client_id">536680955856-hds921fi50cv9do9ur2cs803mjtvo9np.apps.googleusercontent.com</string>
+</resources>

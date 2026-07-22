@@ -32,6 +32,7 @@ export async function POST(
         description: body.description || null,
         epNumber: body.epNumber || 1,
         isFreeDefault: body.isFreeDefault || false,
+        playbackUrl: body.playbackUrl || null,
         processingStatus: 'ready'
       };
     

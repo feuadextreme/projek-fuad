@@ -472,8 +472,8 @@
                 <!-- SIMULATED 9:16 VERTICAL VIDEO BACKDROP (DRAMATIC EFFECTS) -->
                 <div class="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden">
                     
-                    <!-- Beautiful Canvas Animation to Simulate High-tension Cinematic content dynamically -->
-                    <canvas id="video-canvas" class="w-full h-full object-cover"></canvas>
+                    <!-- Real Video Player -->
+                    <video id="video-canvas" class="w-full h-full object-cover" loop playsinline autoplay></video>
 
                     <!-- Swipe Instruction Visual Assist -->
                     <div class="absolute bottom-28 left-4 right-4 bg-black/60 backdrop-blur-sm border border-zinc-800/40 p-2.5 rounded-xl flex items-center justify-between text-[11px] text-zinc-400 pointer-events-none">
@@ -828,8 +828,20 @@
         window.onload = async function() {
             // Render Lucide Icons
             lucide.createIcons();
+            
+            await init();
+        };
 
+        async function init() {
             try {
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleAuth) {
+                    window.Capacitor.Plugins.GoogleAuth.initialize({
+                        clientId: '536680955856-hds921fi50cv9do9ur2cs803mjtvo9np.apps.googleusercontent.com',
+                        scopes: ['profile', 'email'],
+                        grantOfflineAccess: true,
+                    });
+                }
+                
                 // Fetch User state
                 const storedUserId = localStorage.getItem('userId') || 'guest_123';
                 const userRes = await fetch(`/api/admin/users/${storedUserId}`);
@@ -850,7 +862,6 @@
                             document.getElementById('profile-name').innerText = state.user.name;
                             document.getElementById('profile-email').innerText = state.user.email;
                             
-                            
                             document.getElementById('auth-action-btn').innerHTML = `
                                 <div class="flex justify-between items-center w-full relative z-10">
                                     <div class="flex items-center gap-3 text-emerald-500">
@@ -864,7 +875,6 @@
                             `;
                             document.getElementById('auth-action-btn').removeAttribute('onclick');
                             document.getElementById('auth-action-btn').classList.remove('cursor-pointer', 'hover:border-pink-500/60');
-
                         }
                     }
                 }
@@ -903,53 +913,51 @@
                                 </div>
                             </div>
                         `;
-            const foryouGrid = document.getElementById('foryou-grid');
-            if (foryouGrid) {
-                foryouGrid.innerHTML = state.dramas.filter(d => d.tag === 'Romance' || d.tag === 'Action').map(d => generateDramaCard(d)).join('');
-            }
-            
-            // Wallet status
-            const statusEl = document.getElementById('wallet-status-text');
-            if (statusEl) statusEl.innerText = state.user.isVip ? 'VIP Aktif 👑' : 'Gratis / Non-VIP';
-            
-            // Wallet Accounts
-            const walletList = document.getElementById('wallet-accounts-list');
-            if(walletList) {
-                walletList.innerHTML = state.accounts.map(acc => {
-                    const icon = acc.channelType === 'qris' ? 'qr-code' : (acc.channelType === 'e-wallet' ? 'smartphone' : 'building');
-                    const qrSection = (acc.channelType === 'qris' && acc.qrImageUrl)
-                        ? `<div class="mt-4 flex flex-col items-center p-3 bg-zinc-950 rounded-lg border border-pink-500/20">
-                               <img src="${acc.qrImageUrl}" class="w-32 h-32 object-contain mb-2 rounded bg-white p-1" alt="QRIS" onerror="this.src='assets/images/default.png'">
-                               <p class="text-[10px] text-pink-400 font-bold">SCAN QRIS UNTUK MEMBAYAR</p>
-                           </div>`
-                        : '';
-                        
-                    return `
-                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-sm">
-                        <div class="flex items-start gap-4">
-                            <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-                                <i data-lucide="${icon}" class="w-5 h-5 ${acc.channelType === 'qris' ? 'text-pink-500' : 'text-zinc-400'}"></i>
-                            </div>
-                            <div class="flex-1 overflow-hidden">
-                                <h4 class="text-sm font-bold text-white uppercase">${acc.bankOrProviderName}</h4>
-                                <p class="text-xs text-zinc-400 mt-0.5">A.n ${acc.accountHolderName}</p>
-                                <div class="mt-2 flex items-center gap-2">
-                                    <code class="px-2 py-1 bg-zinc-950 rounded text-pink-400 font-mono text-sm tracking-wider font-bold select-all">${acc.accountNumber}</code>
+                        document.getElementById('hero-banner').innerHTML = heroHtml;
+                    }
+                }
+
+                const foryouGrid = document.getElementById('foryou-grid');
+                if (foryouGrid) {
+                    foryouGrid.innerHTML = state.dramas.filter(d => d.tag === 'Romance' || d.tag === 'Action').map(d => generateDramaCard(d)).join('');
+                }
+                
+                // Wallet status
+                const statusEl = document.getElementById('wallet-status-text');
+                if (statusEl) statusEl.innerText = state.user.isVip ? 'VIP Aktif 👑' : 'Gratis / Non-VIP';
+                
+                // Wallet Accounts
+                const walletList = document.getElementById('wallet-accounts-list');
+                if(walletList) {
+                    walletList.innerHTML = state.accounts.map(acc => {
+                        const icon = acc.channelType === 'qris' ? 'qr-code' : (acc.channelType === 'e-wallet' ? 'smartphone' : 'building');
+                        const qrSection = (acc.channelType === 'qris' && acc.qrImageUrl)
+                            ? `<div class="mt-4 flex flex-col items-center p-3 bg-zinc-950 rounded-lg border border-pink-500/20">
+                                   <img src="${acc.qrImageUrl}" class="w-32 h-32 object-contain mb-2 rounded bg-white p-1" alt="QRIS" onerror="this.src='assets/images/default.png'">
+                                   <p class="text-[10px] text-pink-400 font-bold">SCAN QRIS UNTUK MEMBAYAR</p>
+                               </div>`
+                            : '';
+                            
+                        return `
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-sm">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="${icon}" class="w-5 h-5 ${acc.channelType === 'qris' ? 'text-pink-500' : 'text-zinc-400'}"></i>
                                 </div>
-                                ${qrSection}
+                                <div class="flex-1 overflow-hidden">
+                                    <h4 class="text-sm font-bold text-white uppercase">${acc.bankOrProviderName}</h4>
+                                    <p class="text-xs text-zinc-400 mt-0.5">A.n ${acc.accountHolderName}</p>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <code class="px-2 py-1 bg-zinc-950 rounded text-pink-400 font-mono text-sm tracking-wider font-bold select-all">${acc.accountNumber}</code>
+                                    </div>
+                                    ${qrSection}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    `;
-                }).join('');
-                if(state.accounts.length === 0) {
-                    walletList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">Belum ada metode pembayaran tersedia.</p>';
-                }
-            }
-            
-            initVideoCanvas();
-            lucide.createIcons();
-                        document.getElementById('hero-banner').innerHTML = heroHtml;
+                        `;
+                    }).join('');
+                    if(state.accounts.length === 0) {
+                        walletList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">Belum ada metode pembayaran tersedia.</p>';
                     }
                 }
 
@@ -985,9 +993,9 @@
 
             // Populate initial database home screen
             renderDramasGrid();
-            initVideoCanvas();
-        };
-
+            lucide.createIcons();
+        }
+        
         // --- GLOBAL PAYWALL LOGIC ---
         function isEpisodeLocked(dramaId, epNumber) {
             if (state.user.isVip) return false;
@@ -1017,15 +1025,23 @@
 
         async function simulateGoogleSignIn() {
             try {
-                // Simulasi memanggil API backend
+                let name = "Aisha Rahmawati";
+                let email = "aisha.rahma@gmail.com";
+                let avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150";
+
+                // Jika dijalankan di Android dengan Capacitor
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleAuth) {
+                    const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
+                    name = googleUser.name || googleUser.displayName || name;
+                    email = googleUser.email || email;
+                    avatar = googleUser.imageUrl || avatar;
+                }
+
+                // Call backend API
                 const response = await fetch('/api/auth/google', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: "Aisha Rahmawati",
-                        email: "aisha.rahma@gmail.com",
-                        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"
-                    })
+                    body: JSON.stringify({ name, email, avatar })
                 });
                 
                 const data = await response.json();
@@ -1205,7 +1221,8 @@
                             ep: ep.epNumber,
                             title: ep.title,
                             free: ep.isFreeDefault,
-                            desc: ep.description || ''
+                            desc: ep.description || '',
+                            url: ep.playbackUrl || ''
                         })).sort((a, b) => a.ep - b.ep);
                         drama.episodesLoaded = true;
                     }
@@ -1312,84 +1329,19 @@
             }
         }
 
-        // --- CORE VERTICAL VIDEO PLAYER ENGINE ---
-        let animFrameId = null;
+        // --- REAL VERTICAL VIDEO PLAYER ENGINE ---
         let isPlaying = true;
 
-        function initVideoCanvas() {
-            const canvas = document.getElementById('video-canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Adjust to container size
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-
-            let particles = [];
-            for (let i = 0; i < 40; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    radius: Math.random() * 4 + 1,
-                    speedY: Math.random() * 0.8 + 0.2,
-                    color: `rgba(${Math.floor(Math.random() * 50 + 200)}, ${Math.floor(Math.random() * 20 + 30)}, ${Math.floor(Math.random() * 100 + 150)}, ${Math.random() * 0.4 + 0.1})`
-                });
+        function initVideoPlayer(url) {
+            const video = document.getElementById('video-canvas');
+            if (url) {
+                video.src = url;
             }
-
-            let dramaticFlash = 0;
-
-            function draw() {
-                if (!isPlaying) return;
-                
-                // Base dramatic dark vertical theater backdrop
-                let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                gradient.addColorStop(0, '#0d0d13');
-                gradient.addColorStop(0.5, '#1a0b1c'); // Magenta hue glow
-                gradient.addColorStop(1, '#020205');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // Draw cinematic light beams
-                ctx.fillStyle = 'rgba(219, 39, 119, 0.02)';
-                ctx.beginPath();
-                ctx.moveTo(canvas.width / 2, 0);
-                ctx.lineTo(canvas.width * 0.1, canvas.height);
-                ctx.lineTo(canvas.width * 0.9, canvas.height);
-                ctx.closePath();
-                ctx.fill();
-
-                // Draw cinematic floating particles (dust in light)
-                particles.forEach(p => {
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = p.color;
-                    ctx.fill();
-
-                    p.y -= p.speedY;
-                    if (p.y < 0) {
-                        p.y = canvas.height;
-                        p.x = Math.random() * canvas.width;
-                    }
-                });
-
-                // Periodic mock dramatic intensity flashing
-                dramaticFlash += 0.01;
-                ctx.fillStyle = `rgba(219, 39, 119, ${Math.sin(dramaticFlash) * 0.03 + 0.03})`;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // Add simulated video grid overlays
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.01)';
-                ctx.lineWidth = 1;
-                for(let i=0; i<canvas.width; i+=40) {
-                    ctx.beginPath();
-                    ctx.moveTo(i, 0);
-                    ctx.lineTo(i, canvas.height);
-                    ctx.stroke();
-                }
-
-                animFrameId = requestAnimationFrame(draw);
+            if (isPlaying) {
+                video.play().catch(e => console.error("Playback failed", e));
+            } else {
+                video.pause();
             }
-
-            draw();
         }
 
         function playEpisode(epNumber) {
@@ -1417,6 +1369,7 @@
             if (isLocked) {
                 // Pause video loop background simulation
                 isPlaying = false;
+                initVideoPlayer();
                 
                 // Show paywall locking panel
                 document.getElementById('paywall-title').innerText = `Lanjut Nonton Episode ${epNumber}?`;
@@ -1425,7 +1378,7 @@
                 // Keep playing video
                 isPlaying = true;
                 document.getElementById('paywall-overlay').classList.add('hidden');
-                initVideoCanvas();
+                initVideoPlayer(epData.url);
             }
 
             // Populate the Drawer inside Player
@@ -1434,7 +1387,7 @@
 
         function closeVideoPlayer() {
             isPlaying = false;
-            if(animFrameId) cancelAnimationFrame(animFrameId);
+            initVideoPlayer();
             document.getElementById('video-player-screen').classList.add('hidden');
         }
 
@@ -1443,10 +1396,11 @@
             const icon = document.getElementById('play-pause-icon');
             if(isPlaying) {
                 icon.className = "w-6 h-6 fill-white ml-0.5";
-                initVideoCanvas();
+                initVideoPlayer();
             } else {
                 icon.className = "w-6 h-6 fill-white text-white";
                 showToast("Video Dijeda");
+                initVideoPlayer();
             }
         }
 
@@ -1910,6 +1864,18 @@ function openVipModal() {
             
             const bankNameUpper = acc.bankOrProviderName.toUpperCase();
             const amountFormatted = `Rp ${vip.price.toLocaleString('id-ID')}`;
+            
+            // Redirect for VIP Bulanan via Virtual Account
+            if (vip.name.toLowerCase().includes('bulanan') && (bankNameUpper.includes('VIRTUAL') || bankNameUpper.includes('VA'))) {
+                window.location.href = 'https://paywuz.id/pay/b609c0fa-e4f3-44a1-9218-73181640864d';
+                return;
+            }
+            
+            // Redirect for VIP Bulanan via BCA
+            if (vip.name.toLowerCase().includes('bulanan') && bankNameUpper.includes('BCA')) {
+                window.location.href = 'https://paywuz.id/pay/d542aaa4-0c13-463d-9bf9-de4ba803696d';
+                return;
+            }
             
             let contentHtml = '';
 
