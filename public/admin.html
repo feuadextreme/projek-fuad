@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -242,7 +242,7 @@
                                     <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=150" class="w-12 h-16 object-cover rounded-md" alt="Cover">
                                     <div>
                                         <p class="text-sm font-bold text-white">Pembalasan Sang Miliarder</p>
-                                        <p class="text-xs text-zinc-500">Miliarder • 85 Episode</p>
+                                        <p class="text-xs text-zinc-500">Miliarder ΓÇó 85 Episode</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
@@ -256,7 +256,7 @@
                                     <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=150" class="w-12 h-16 object-cover rounded-md" alt="Cover">
                                     <div>
                                         <p class="text-sm font-bold text-white">Cinta Bersemi di Kantor</p>
-                                        <p class="text-xs text-zinc-500">Romantis • 60 Episode</p>
+                                        <p class="text-xs text-zinc-500">Romantis ΓÇó 60 Episode</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
@@ -496,22 +496,8 @@
                                 <th class="px-6 py-4 font-medium text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-800">
-                            <tr class="hover:bg-zinc-800/30 transition-colors">
-                                <td class="px-6 py-4">
-                                    <p class="font-bold text-white">rani.putri@gmail.com</p>
-                                    <p class="text-[10px] text-zinc-500">ID: usr_abc123</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="flex items-center gap-1.5 text-xs"><i data-lucide="mail" class="w-3.5 h-3.5"></i> Google</span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2.5 py-1 rounded text-[10px] font-bold bg-pink-500/10 text-pink-400 border border-pink-500/20">VIP AKTIF</span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <button class="text-xs text-blue-400 hover:text-white transition-colors">Detail</button>
-                                </td>
-                            </tr>
+                        <tbody id="users-tbody" class="divide-y divide-zinc-800">
+                            <!-- Dynamic content will be injected here -->
                         </tbody>
                     </table>
                 </div>
@@ -711,10 +697,44 @@
         };
 
         // Initialize App
+        async function loadData() {
+            try {
+                const [resDramas, resVips, resAcc, resUsers] = await Promise.all([
+                    fetch('/api/admin/dramas'),
+                    fetch('/api/admin/vip/packages'),
+                    fetch('/api/admin/finance/accounts'),
+                    fetch('/api/admin/users')
+                ]);
+                
+                const [jsonDramas, jsonVips, jsonAcc, jsonUsers] = await Promise.all([
+                    resDramas.json(), resVips.json(), resAcc.json(), resUsers.json()
+                ]);
+
+                state.dramas = jsonDramas.data.map(d => ({
+                    id: d.id, title: d.title, genre: d.genre || '-', synopsis: d.synopsis || '', cover: d.cover || 'assets/images/default.png', eps: d.totalEpisodes || 0, status: d.status
+                }));
+                
+                state.vips = jsonVips.data.map(v => ({
+                    id: v.id, name: v.name, price: v.price, duration: v.durationMonths, active: v.isActive, promo: v.isPromo, promoText: v.promoText
+                }));
+                
+                state.accounts = jsonAcc.data.map(a => ({
+                    id: a.id, bank: a.bankOrProviderName, number: a.accountNumber, name: a.accountHolderName, type: a.channelType, qr: a.qrImageUrl, active: a.isActive
+                }));
+                
+                state.users = jsonUsers.data || [];
+
+                renderDramas();
+                renderVIPs();
+                renderAccounts();
+                renderUsers();
+            } catch (e) {
+                console.error('Failed to load data', e);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            renderDramas();
-            renderVIPs();
-            renderAccounts();
+            loadData();
             
             // Toggle promo text input based on checkbox
             document.getElementById('vip-promo').addEventListener('change', function() {
@@ -802,18 +822,21 @@
                 tr.className = 'hover:bg-zinc-800/30 transition-colors';
                 tr.innerHTML = `
                     <td class="px-6 py-4 flex items-center gap-3">
-                        <img src="${drama.cover}" class="w-8 h-8 rounded object-cover">
+                        <img src="${drama.cover || '/assets/images/default.png'}" class="w-8 h-8 rounded object-cover">
                         <span class="font-bold text-white">${drama.title}</span>
                     </td>
-                    <td class="px-6 py-4">${drama.genre}</td>
-                    <td class="px-6 py-4">${drama.eps}</td>
+                    <td class="px-6 py-4 text-zinc-400">${drama.genre || '-'}</td>
+                    <td class="px-6 py-4 text-zinc-400">${drama.eps || 0} Ep</td>
                     <td class="px-6 py-4">${statusBadge}</td>
                     <td class="px-6 py-4 text-right flex justify-end gap-2">
-                        <button onclick="openEpisodeModal(${drama.id})" class="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors" title="Kelola Episode">
+                        <button onclick="openEpisodeModal('${drama.id}')" class="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors" title="Kelola Episode">
                             <i data-lucide="list-video" class="w-4 h-4"></i>
                         </button>
-                        <button onclick="editDrama(${drama.id})" class="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors" title="Edit Metadata">
+                        <button onclick="editDrama('${drama.id}')" class="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors" title="Edit Metadata">
                             <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteDrama('${drama.id}')" class="p-1.5 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors" title="Hapus Drama">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </td>
                 `;
@@ -828,6 +851,7 @@
             document.getElementById('drama-title').value = '';
             document.getElementById('drama-genre').value = '';
             document.getElementById('drama-synopsis').value = '';
+            document.getElementById('drama-cover').value = '';
             document.getElementById('drama-status').value = 'DRAFT';
             openModal('drama');
         }
@@ -873,6 +897,22 @@
             closeModal('drama');
         }
 
+        async function deleteDrama(id) {
+            if (!confirm('Yakin ingin menghapus drama ini? Seluruh episode di dalamnya juga akan terhapus.')) return;
+            try {
+                const res = await fetch('/api/admin/dramas/' + id, { method: 'DELETE' });
+                if(res.ok) {
+                    showToast('Drama berhasil dihapus');
+                    await loadData();
+                } else {
+                    showToast('Gagal menghapus drama', 'error');
+                }
+            } catch(e) {
+                console.error(e);
+                showToast('Gagal menghapus drama', 'error');
+            }
+        }
+
         // ---- EPISODE LOGIC ----
         function openEpisodeModal(dramaId) {
             const drama = state.dramas.find(d => d.id === dramaId);
@@ -902,7 +942,7 @@
             }
 
             eps.forEach((ep, index) => {
-                const badge = ep.type === 'free' 
+                const badge = ep.isFreeDefault 
                     ? `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[9px] font-bold">GRATIS</span>`
                     : `<span class="bg-pink-500/10 text-pink-400 border border-pink-500/20 px-2 py-0.5 rounded text-[9px] font-bold">TERKUNCI</span>`;
                     
@@ -913,7 +953,7 @@
                         <p class="text-sm font-bold text-white flex items-center gap-2">
                             ${index+1}. ${ep.title} ${badge}
                         </p>
-                        <p class="text-[10px] text-zinc-500 font-mono mt-1">ID: ${ep.videoId} • Status: <span class="text-emerald-400">Siap Tayang</span></p>
+                        <p class="text-[10px] text-zinc-500 font-mono mt-1">ID: ${ep.videoId} ΓÇó Status: <span class="text-emerald-400">Siap Tayang</span></p>
                     </div>
                     <button onclick="deleteEpisode(${dramaId}, ${ep.id})" class="text-red-500 hover:bg-red-500/10 p-1.5 rounded transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 `;
@@ -938,7 +978,7 @@
             
             let progress = 0;
             const interval = setInterval(() => {
-                progress += Math.random() * 20;
+                progress += 25;
                 if(progress > 100) progress = 100;
                 
                 pBar.style.width = progress + '%';
@@ -1153,6 +1193,45 @@
                 `;
                 list.appendChild(item);
             });
+        }
+
+        
+        function renderUsers() {
+            const tbody = document.getElementById('users-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            
+            if (!state.users || state.users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-zinc-500">Tidak ada pengguna ditemukan</td></tr>';
+                return;
+            }
+            
+            state.users.forEach(user => {
+                const methodBadge = user.authProvider === 'google' 
+                    ? '<span class="flex items-center gap-1.5 text-xs"><i data-lucide="mail" class="w-3.5 h-3.5 text-blue-400"></i> Google</span>'
+                    : '<span class="flex items-center gap-1.5 text-xs"><i data-lucide="user" class="w-3.5 h-3.5 text-zinc-400"></i> Local</span>';
+                    
+                const vipBadge = user.vipStatus === 'active'
+                    ? '<span class="px-2.5 py-1 rounded text-[10px] font-bold bg-pink-500/10 text-pink-400 border border-pink-500/20">VIP AKTIF</span>'
+                    : '<span class="px-2.5 py-1 rounded text-[10px] font-bold bg-zinc-800 text-zinc-400 border border-zinc-700">REGULER</span>';
+                    
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-zinc-800/30 transition-colors';
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-white">${user.email || '-'}</p>
+                        <p class="text-[10px] text-zinc-500 mt-1">ID: ${user.id}</p>
+                        ${user.name ? `<p class="text-[10px] text-zinc-400 mt-0.5">Nama: ${user.name}</p>` : ''}
+                    </td>
+                    <td class="px-6 py-4">${methodBadge}</td>
+                    <td class="px-6 py-4">${vipBadge}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-xs text-blue-400 hover:text-white transition-colors p-2">Detail</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
         }
 
         function openAccountModal() {
